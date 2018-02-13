@@ -1,17 +1,34 @@
+// Docker plugin
+import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+
 task wrapper(type: Wrapper) {
     gradleVersion = '4.5'
+}
+
+// Added for docker plugin
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:3.2.4'
+    }
 }
 
 apply plugin: 'java' // Standard Java plugin
 apply plugin: 'java-library' // Works with Java plugin, for a library app that exports an API
 apply plugin: 'eclipse'
+apply plugin: 'com.bmuschko.docker-remote-api'
 
 sourceCompatibility = 1.8
-version = '1.0'
+// version = '1.0'
 jar {
+    baseName = 'app'
     manifest {
-        attributes 'Implementation-Title': 'Gradle Quickstart',
-                   'Implementation-Version': version
+        attributes 'Implementation-Title': 'Gradle Quickstart'
+                   // 'Implementation-Version': version
     }
 }
 
@@ -40,4 +57,29 @@ uploadArchives {
            dirs 'repos'
        }
     }
+}
+
+// Docker plugin
+task buildDockerfile(type: Dockerfile) {
+    dependsOn assemble
+    doFirst {
+        copy {
+            from jar
+            into "${buildDir}/docker"
+        }
+    }
+    destFile = project.file("${buildDir}/docker/Dockerfile")
+    // Docker hub - Alpine Linux with Oracle JDK8
+    from 'frolvlad/alpine-oraclejdk8:slim'
+    addFile("${jar.archiveName}", "/app.jar")
+    runCommand "sh -c 'touch /app.jar'"
+    exposePort 8080
+    entryPoint("java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app.jar")
+}
+
+// Docker plugin
+task buildDockerImage(type: DockerBuildImage) {
+    dependsOn buildDockerfile
+    inputDir = buildDockerfile.destFile.parentFile
+    tag = "app"
 }
