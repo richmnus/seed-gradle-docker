@@ -23,12 +23,14 @@ apply plugin: 'eclipse'
 apply plugin: 'com.bmuschko.docker-remote-api'
 
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 // version = '1.0'
 jar {
     baseName = 'app'
     manifest {
-        attributes 'Implementation-Title': 'Gradle Quickstart'
-                   // 'Implementation-Version': version
+        attributes ('Implementation-Title': 'Seed Gradle Docker',
+                    // 'Implementation-Version': version
+                    'Main-Class': "uk.martinus.seed.Main")
     }
 }
 
